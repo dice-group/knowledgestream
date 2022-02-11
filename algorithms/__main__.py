@@ -38,29 +38,29 @@ from algorithms.linkpred.pref_attach import preferential_attachment
 
 
 # KG - DBpedia
-HOME = abspath(expanduser('~/Projects/knowledgestream/data/'))
-if not exists(HOME):
-	print 'Data directory not found: %s' % HOME
-	print 'Download data per instructions on:'
-	print '\thttps://github.com/shiralkarprashant/knowledgestream#data'
-	print 'and enter the directory path below.'
-	data_dir = raw_input('\nPlease enter data directory path: ')
-	if data_dir != '':
-		data_dir = abspath(expanduser(data_dir))
-	if not os.path.isdir(data_dir):
-		raise Exception('Entered path "%s" not a directory.' % data_dir)
-	if not exists(data_dir):
-		raise Exception('Directory does not exist: %s' % data_dir)
-	HOME = data_dir
-	# raise Exception('Please set HOME to data directory in algorithms/__main__.py')
-PATH = join(HOME, 'kg/_undir/')
-assert exists(PATH)
-SHAPE = (6060993, 6060993, 663)
+#HOME = abspath(expanduser('~/Projects/knowledgestream/data/'))
+#if not exists(HOME):
+#	print 'Data directory not found: %s' % HOME
+#	print 'Download data per instructions on:'
+#	print '\thttps://github.com/shiralkarprashant/knowledgestream#data'
+#	print 'and enter the directory path below.'
+#	data_dir = raw_input('\nPlease enter data directory path: ')
+#	if data_dir != '':
+#		data_dir = abspath(expanduser(data_dir))
+#	if not os.path.isdir(data_dir):
+#		raise Exception('Entered path "%s" not a directory.' % data_dir)
+#	if not exists(data_dir):
+#		raise Exception('Directory does not exist: %s' % data_dir)
+#	HOME = data_dir
+#	# raise Exception('Please set HOME to data directory in algorithms/__main__.py')
+#PATH = join(HOME, 'kg/_undir/')
+#assert exists(PATH)
+#SHAPE = (6060993, 6060993, 663)
 WTFN = 'logdegree'
 
 # relational similarity using TF-IDF representation and cosine similarity
-RELSIMPATH = join(HOME, 'relsim/coo_mat_sym_2016-10-24_log-tf_tfidf.npy') 
-assert exists(RELSIMPATH)
+#RELSIMPATH = join(HOME, 'relsim/coo_mat_sym_2016-10-24_log-tf_tfidf.npy') 
+#assert exists(RELSIMPATH)
 
 # Date
 DATE = '{}'.format(date.today())
@@ -348,6 +348,9 @@ def main(args=None):
 			predpath, pra, katz, pathent, simrank, adamic_adar, jaccard, degree_product.')
 	parser.add_argument('-d', type=str, required=True,
 			dest='dataset', help='Dataset to test on.')
+	parser.add_argument('-g', type=str, required=True,
+			dest='graph', 
+			help='knowledge graph directory containing the "adjacency.tsv", "nodes.tsv" and "relations.tsv" files.')
 	parser.add_argument('-o', type=str, required=True,
 			dest='outdir', help='Path to the output directory.')
 	args = parser.parse_args()
@@ -381,11 +384,27 @@ def main(args=None):
 	subs, preds, objs  = df[:,0].astype(_int), df[:,1].astype(_int), df[:,2].astype(_int)
 
 	# load knowledge graph
-	G = Graph.reconstruct(PATH, SHAPE, sym=True) # undirected
+	graph_dir = args.graph
+	log.info('Reading nodes file...')
+	nodes = np.genfromtxt(graph_dir + '/nodes.tsv',delimiter='\t')
+	log.info('Reading relations file...')
+	relations = np.genfromtxt(graph_dir + '/relations.tsv',delimiter='\t')
+        shape = (len(nodes), len(nodes), len(relations))
+        nodes = None
+        relations = None
+	log.info('Found {} nodes and {} relations file.'.format(shape[0], shape[2]))
+	log.info('Reading adjacency matrix...'.format(args.method))
+	adj = np.genfromtxt(graph_dir + '/adjacency.tsv',delimiter='\t')
+	G = Graph(adj, shape, sym=True)
+	#G = Graph.reconstruct(PATH, SHAPE, sym=True) # undirected
 	assert np.all(G.csr.indices >= 0)
 
 	# relational similarity
-	relsim = np.load(RELSIMPATH)
+        # REMOVED SINCE IT IS NOT NEEDED FOR KLINKER!
+	# relsim = np.load(RELSIMPATH)
+
+	# We don't want to use the date in the output file name
+	DATE = ""
 
 	# execute
 	base = splitext(basename(args.dataset))[0]
