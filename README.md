@@ -1,43 +1,41 @@
+This is a fork of [knowledgestream](https://github.com/shiralkarprashant/knowledgestream) originally created by [shiralkarprashant](https://github.com/shiralkarprashant). This project extends its accessibility, e.g., by creating a Docker image that comes with all dependencies of the project.
+
 # Paper
-Code to reproduce results in the paper "Finding Streams in Knowledge Graphs to Support Fact Checking" in proceedings of ICDM 2017. A full version of this paper can be found at: https://arxiv.org/abs/1708.07239
+If you make use of the Docker file, you should still cite the original paper "Finding Streams in Knowledge Graphs to Support Fact Checking", in Proceedings of ICDM 2017. The paper can be found at: https://arxiv.org/abs/1708.07239
+
+__TODO__ update README from here on
 
 # Fetch
 ```
 git clone https://github.com/shiralkarprashant/knowledgestream
 cd knowledgestream
-mkdir -p output
 ```
-
-# Data
-Download data from the following URL http://carl.cs.indiana.edu/data/fact-checking/data.zip and decompress it inside `knowledgestream` directory. This compressed file contains three items: 
-
-1. DBpedia 2016-10 knowledge graph represented by three files: nodes.txt, relations.txt, and abbrev_cup_dbpedia_filtered.nt, which have been derived from raw data on the DBpedia downloads page: [DBpedia 2016-10](http://wiki.dbpedia.org/downloads-2016-10). Additionally, it contains a directory named `_undir` which contains datastructures in binary format as required by the code. If you are interested in applying methods in this repository on your own knowledge graph, you may use the following script to generate the required graph files (.npy): [KG generation script](https://github.com/shiralkarprashant/knowledgestream/blob/master/datastructures/test_graph.py)
-2. A collection of synthetic and real datasets, some of which were created by us, while others were downloaded from [KGMiner](https://github.com/nddsg/KGMiner/) or as provided by Google and the WSDM Cup 2017 Triple Scoring challenge organizers. The true triples (positive examples) in the synthetic datasets created based on Wikipedia lists given below, and the false triples (negative examples) were created by "perturbing" the set of objects in each list; this is also called "local-closed world assumption (LCWA)."
-	- NBA-Team: [List of NBA players who have spent their entire career with one franchise](https://en.wikipedia.org/wiki/List_of_NBA_players_who_have_spent_their_entire_career_with_one_franchise)
-	- Oscars: [Academy Award for Best Picture](https://en.wikipedia.org/wiki/Academy_Award_for_Best_Picture)
-	- FLOTUS: [List of First Ladies of the United States](https://en.wikipedia.org/wiki/List_of_First_Ladies_of_the_United_States)
-	- World Capitals: [List of national capitals in alphabetical order](https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order)
-	- Birthplace-Deathplace: This was created just based on DBpedia. Persons having different birth and death place were identified and 250 individuals were sampled from five buckets partitioning [Birthplace-Deathplace](http://carl.cs.indiana.edu/data/fact-checking/histogram_persons_vs_facts.pdf) distribution. Their death place was forged as a false example (or triple) of their birth place, while their birth place was taken as a true triple, thereby creating 250 true and 250 false triples. 
-3. A relational similarity matrix obtained using TF-IDF representation of relations in the knowledge graph. See paper for details.
 
 # System requirements
 
-* **OS:** Linux Ubuntu / Mac OSX 10.12 (Sierra)
-* **Python:** Python 2.7 (we developed and tested using the Anaconda distribution)
-* **Memory requirements:** >4 GB
+* Docker
+* >4 GB RAM
 
 # Install
 
-```python setup.py build_ext -if```
-
-```python setup.py install```
-
-Note: for the second command, please do sudo in case you need installation rights on the machine.
-
+```Docker build -t kstreams:0.1.0 .```
 
 # Run 
 
-**Note**: For the ouput directory parameter ("-o") for any of the algorithms in this repository, please make sure the directory exists before launching the process. Otherwise, it throws an AssertionError due to a non-existent directory.
+An example run of the docker image.
+
+```
+docker run -it -v local-input:/usr/app/ks/input -v local-output:/usr/app/ks/output kstreams:0.1.0 kstream -m klinker -d input/test_facts.csv -g input -o output
+```
+Note that `local-input` and `local-output` should be replaced with your local directories that contain the input files and to which the output file should be written. Note that the comman that starts the `kstream` program has to work with the paths _inside_ the container. The `-g` option has been added by us and points to the directory that contains the reference knowledge graph in a preprocessed form. This form assumes three files:
+* `nodes.tsv`: contains the id -> node mapping. It is only used to get the number of nodes in the graph.
+* `relations.tsv`: contains the id -> relation mapping. It is only used to get the number of nodes in the graph.
+* `adjacency.tsv`: contains the adjacency matrix of the graph.
+
+The rest of this file describes the commands to run the different algorithms implemented in this project.
+
+**Please note that the cooccurrence matrix used by KS and KL-REL is not yet generated by this piece of code**
+This remains an open todo.
 
 ## Knowledge Stream (KS)
 
@@ -102,7 +100,7 @@ and a CSV file is created at the specified output directory, which contains `sco
 
 ## Knowledge Linker (KL)
 
-```kstream -m relklinker -d datasets/sample.csv -o output/```
+```kstream -m klinker -d datasets/sample.csv -o output/```
 
 You should see output such as 
 
@@ -248,3 +246,17 @@ Reconstructing graph from data/kg/_undir
 ```
 
 and a CSV file is created at the specified output directory, which contains `score` and `softmaxscore` (normalized) for each triple.
+
+
+# Data
+Download data from the following URL http://carl.cs.indiana.edu/data/fact-checking/data.zip and decompress it inside `knowledgestream` directory. This compressed file contains three items: 
+
+1. DBpedia 2016-10 knowledge graph represented by three files: nodes.txt, relations.txt, and abbrev_cup_dbpedia_filtered.nt, which have been derived from raw data on the DBpedia downloads page: [DBpedia 2016-10](http://wiki.dbpedia.org/downloads-2016-10). Additionally, it contains a directory named `_undir` which contains datastructures in binary format as required by the code. If you are interested in applying methods in this repository on your own knowledge graph, you may use the following script to generate the required graph files (.npy): [KG generation script](https://github.com/shiralkarprashant/knowledgestream/blob/master/datastructures/test_graph.py)
+2. A collection of synthetic and real datasets, some of which were created by us, while others were downloaded from [KGMiner](https://github.com/nddsg/KGMiner/) or as provided by Google and the WSDM Cup 2017 Triple Scoring challenge organizers. The true triples (positive examples) in the synthetic datasets created based on Wikipedia lists given below, and the false triples (negative examples) were created by "perturbing" the set of objects in each list; this is also called "local-closed world assumption (LCWA)."
+	- NBA-Team: [List of NBA players who have spent their entire career with one franchise](https://en.wikipedia.org/wiki/List_of_NBA_players_who_have_spent_their_entire_career_with_one_franchise)
+	- Oscars: [Academy Award for Best Picture](https://en.wikipedia.org/wiki/Academy_Award_for_Best_Picture)
+	- FLOTUS: [List of First Ladies of the United States](https://en.wikipedia.org/wiki/List_of_First_Ladies_of_the_United_States)
+	- World Capitals: [List of national capitals in alphabetical order](https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order)
+	- Birthplace-Deathplace: This was created just based on DBpedia. Persons having different birth and death place were identified and 250 individuals were sampled from five buckets partitioning [Birthplace-Deathplace](http://carl.cs.indiana.edu/data/fact-checking/histogram_persons_vs_facts.pdf) distribution. Their death place was forged as a false example (or triple) of their birth place, while their birth place was taken as a true triple, thereby creating 250 true and 250 false triples. 
+3. A relational similarity matrix obtained using TF-IDF representation of relations in the knowledge graph. See paper for details.
+
