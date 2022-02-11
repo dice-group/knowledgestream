@@ -18,7 +18,7 @@ cd knowledgestream
 
 # Install
 
-```Docker build -t kstreams:0.1.0 .```
+```docker build -t kstreams:0.1.0 .```
 
 # Run 
 
